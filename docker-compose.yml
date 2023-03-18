@@ -61,6 +61,7 @@ services:
       - phpmyadmin
 
 networks:
-    env-server:
-        internal: true
-        name: environment-server
+  env-server:
+    internal: true
+    driver: bridge
+    name: environment-server
