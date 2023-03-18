@@ -14,7 +14,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    command: --default-authentication-plugin=mysql_native_password --sql_mode=""
+    command: --default-authentication-plugin=mysql_native_password --sql_mode="" host_cache_size=0
     volumes:
       - ./db_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -32,6 +32,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     networks:
       - env-server
+    depends_on:
+      - db
 
   nginx-proxy-manager:
     container_name: env_npm
@@ -54,6 +56,9 @@ services:
       - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
     networks:
       - env-server
+    depends_on:
+      - db
+      - phpmyadmin
 
 networks:
     env-server:
