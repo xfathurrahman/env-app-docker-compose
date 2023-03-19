@@ -4,6 +4,7 @@ services:
     container_name: mysql
     image: mysql:latest
     restart: always
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --sql_mode=""
     ports:
       - ${MYSQL_PORT}:3306
     environment:
@@ -11,17 +12,15 @@ services:
       - MYSQL_DATABASE=${NPM_DB_NAME}
       - MYSQL_USER=${NPM_DB_USER}
       - MYSQL_PASSWORD=${NPM_DB_PASSWORD}
-    command: [mysqld, --default-authentication-plugin=mysql_native_password, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --innodb_monitor_enable=all, --max-connections=1001]
     volumes:
       - ./db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD" ,"ping", "-h", "localhost", "-c", "1", "-W", "1"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
     networks:
       - env-server
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin/phpmyadmin:latest
