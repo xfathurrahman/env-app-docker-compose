@@ -8,19 +8,19 @@ services:
     ports:
       - ${MYSQL_PORT}:3306
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${NPM_DB_NAME}
-      - MYSQL_USER=${NPM_DB_USER}
-      - MYSQL_PASSWORD=${NPM_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${NPM_DB_NAME}
+      MYSQL_USER: ${NPM_DB_USER}
+      MYSQL_PASSWORD: ${NPM_DB_PASSWORD}
     volumes:
       - ./db_data:/var/lib/mysql
-    networks:
-      - env-server
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - env-server
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin/phpmyadmin:latest
@@ -28,11 +28,11 @@ services:
     ports:
       - ${PMA_PORT}:80
     environment:
-      - PMA_HOST=db
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - PMA_ARBITRARY=${PMA_ARBITRARY}
-      - FORCE_SSL=${PMA_FORCE_SSL}
-      - PMA_ABSOLUTE_URI=${PMA_ABSOLUTE_URI}
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_ARBITRARY: ${PMA_ARBITRARY}
+      FORCE_SSL: ${PMA_FORCE_SSL}
+      PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI}
     depends_on:
       - db
     networks:
@@ -46,11 +46,11 @@ services:
       - ${NPM_PORT_ADMIN}:81
       - ${NPM_PORT_SSL}:443
     environment:
-      - DB_MYSQL_HOST=db
-      - DB_MYSQL_PORT=${MYSQL_PORT}
-      - DB_MYSQL_USER=${NPM_DB_USER}
-      - DB_MYSQL_PASSWORD=${NPM_DB_PASSWORD}
-      - DB_MYSQL_NAME=${NPM_DB_NAME}
+      DB_MYSQL_HOST: db
+      DB_MYSQL_PORT: ${MYSQL_PORT}
+      DB_MYSQL_USER: ${NPM_DB_USER}
+      DB_MYSQL_PASSWORD: ${NPM_DB_PASSWORD}
+      DB_MYSQL_NAME: ${NPM_DB_NAME}
     volumes:
       - ./nginx-proxy-manager/data:/data
       - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
