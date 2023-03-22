@@ -1,24 +1,30 @@
 version: '3.9'
 services:
-  db:
-    container_name: mysql
-    image: mysql:latest
-    restart: always
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --sql_mode=""
+  app:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
     ports:
-      - ${MYSQL_PORT}:3306
+      - ${NPM_PORT}:80
+      - ${NPM_PORT_ADMIN}:81
+      - ${NPM_PORT_SSL}:443
+      # - '21:21' # FTP
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${NPM_DB_NAME}
-      MYSQL_USER: ${NPM_DB_USER}
-      MYSQL_PASSWORD: ${NPM_DB_PASSWORD}
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "${NPM_DB_USER}"
+      DB_MYSQL_PASSWORD: "${NPM_DB_PASSWORD}"
+      DB_MYSQL_NAME: "${NPM_DB_NAME}"
+      # DISABLE_IPV6: 'true'
     volumes:
-      - ./db_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - ./nginx-proxy-manager/data:/data
+      - ./nginx-proxy-manager/data/logs:/var/log/nginx
+      - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    depends_on:
+      db:
+        condition: service_healthy
+      phpmyadmin:
+        condition: service_healthy
     networks:
       - env-server
   phpmyadmin:
@@ -33,32 +39,46 @@ services:
       PMA_ARBITRARY: ${PMA_ARBITRARY}
       FORCE_SSL: ${PMA_FORCE_SSL}
       PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${PMA_ABSOLUTE_URI:-http://localhost:80}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - env-server
-  nginx-proxy-manager:
-    container_name: npm
-    image: jc21/nginx-proxy-manager:latest
+  db:
+    container_name: mysql
+    image: mysql:latest
     restart: always
+    command: [
+      "mysqld", 
+      "--default-authentication-plugin=caching_sha2_password",
+      "--log-error-verbosity", 
+      "--log-bin-index=/tmp/tmp.5FTdABPAKI", 
+      ]
     ports:
-      - ${NPM_PORT}:80
-      - ${NPM_PORT_ADMIN}:81
-      - ${NPM_PORT_SSL}:443
+      - ${MYSQL_PORT}:3306
     environment:
-      DB_MYSQL_HOST: db
-      DB_MYSQL_PORT: ${MYSQL_PORT}
-      DB_MYSQL_USER: ${NPM_DB_USER}
-      DB_MYSQL_PASSWORD: ${NPM_DB_PASSWORD}
-      DB_MYSQL_NAME: ${NPM_DB_NAME}
-    volumes:
-      - ./nginx-proxy-manager/data:/data
-      - ./nginx-proxy-manager/letsencrypt:/etc/letsencrypt
-    depends_on:
-      - db
-      - phpmyadmin
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${NPM_DB_NAME}
+      MYSQL_USER: ${NPM_DB_USER}
+      MYSQL_PASSWORD: ${NPM_DB_PASSWORD}
+      MYSQLD_OPTS: "--host-cache-size=0"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - env-server
+volumes:
+  db_data:
+  npm_data:
+  npm_letsencrypt:
+  npm_log:
 networks:
   env-server:
     name: ${NETWORK_NAME}
