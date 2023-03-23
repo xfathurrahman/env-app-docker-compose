@@ -6,4 +6,4 @@ ex : sudo chown -R ur_user:www-data ur_folder_name/
 - change ur env variables if needed
 # 3. docker compose up
 
-note : if u want to renew ur data, just delete the folder mysql and nginx-proxy-manager folder and run docker-compose up again
+note : if u want to renew ur data, just delete the mysql and nginx-proxy-manager folder and run docker-compose up again
